@@ -20,6 +20,16 @@ export default function Dashboard() {
         fetchKeys();
     };
 
+    const deleteKey = async (key: string) => {
+        if (!confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN Key: ${key}? Lệnh trên AutoCAD đang xài Key này sẽ bị mất quyền PRO ngay lập tức!`)) return;
+        await fetch('/api/keys', {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ key })
+        });
+        fetchKeys();
+    };
+
     useEffect(() => {
         fetchKeys();
     }, []);
@@ -48,18 +58,27 @@ export default function Dashboard() {
                         {[...keys].reverse().map((item, idx) => {
                             const isFull = item.machineIds.length >= 2;
                             return (
-                                <div key={idx} className="p-4 bg-slate-700/50 rounded-xl flex items-center justify-between border border-slate-600/50 hover:border-blue-500/50 transition">
+                                <div key={idx} className="p-4 bg-slate-700/50 rounded-xl flex items-center justify-between border border-slate-600/50 hover:border-red-500/30 transition group">
                                     <div className="flex items-center space-x-6">
                                         <strong className="text-yellow-400 font-mono text-2xl tracking-widest">{item.key}</strong>
                                         <span className="px-3 py-1 bg-slate-900 rounded-full text-sm text-slate-300 ring-1 ring-slate-600">
                                             {item.duration === 0 ? 'Gói Vĩnh Viễn 🏆' : item.duration + ' Tháng ⏱'}
                                         </span>
                                     </div>
-                                    <div className="flex items-center space-x-3">
-                                        <span className="text-slate-400 text-sm">Thiết bị:</span>
-                                        <span className={`font-bold ${isFull ? 'text-red-400' : 'text-emerald-400'}`}>
-                                            {item.machineIds.length}/2
-                                        </span>
+                                    <div className="flex items-center space-x-6">
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-slate-400 text-sm">Thiết bị:</span>
+                                            <span className={`font-bold ${isFull ? 'text-red-400' : 'text-emerald-400'}`}>
+                                                {item.machineIds.length}/2
+                                            </span>
+                                        </div>
+                                        <button 
+                                            onClick={() => deleteKey(item.key)} 
+                                            className="ml-4 opacity-30 group-hover:opacity-100 px-3 py-1 bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600 transition hover:text-white rounded font-bold shadow-lg text-sm"
+                                            title="Hủy/Xóa Key này vĩnh viễn"
+                                        >
+                                            Chặn / Xóa
+                                        </button>
                                     </div>
                                 </div>
                             );

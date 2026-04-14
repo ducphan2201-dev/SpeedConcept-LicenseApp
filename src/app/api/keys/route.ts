@@ -19,3 +19,9 @@ export async function POST(req: Request) {
     global.dbKeys.push({ key, duration, machineIds: [], activated: false });
     return NextResponse.json({ success: true, key });
 }
+
+export async function DELETE(req: Request) {
+    const { key } = await req.json();
+    global.dbKeys = global.dbKeys.filter(k => k.key !== key);
+    return NextResponse.json({ success: true });
+}
