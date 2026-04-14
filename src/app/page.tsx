@@ -27,7 +27,7 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-slate-900 p-10 font-sans text-white">
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-emerald-400 text-transparent bg-clip-text">AutoCad-SpeedConcept Admin Dashboard</h1>
+                <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-emerald-400 text-transparent bg-clip-text">KAS-SpeedConcept Dashboard by DucPhan</h1>
                 
                 <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 mb-8">
                     <h2 className="text-xl font-semibold mb-6 text-slate-200">💎 Tạo Mã Kích Hoạt Mới</h2>
