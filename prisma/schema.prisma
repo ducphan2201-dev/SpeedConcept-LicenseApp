@@ -3,21 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model LicenseKey {
   id          String   @id @default(cuid())
   key         String   @unique
-  duration    Int      // Số tháng (0 = vĩnh viễn)
-  createdAt   DateTime @default(now())
-  
-  // Trạng thái kích hoạt
+  duration    Int
+  machineIds  String   @default("[]") // JSON string array of HWIDs
   isActivated Boolean  @default(false)
   activatedAt DateTime?
   expiresAt   DateTime?
-  
-  // Hỗ trợ tối đa 2 máy tính (Lưu JSON string mảng 2 cấu hình HWID)
-  machineIds  String   @default("[]") 
+  createdAt   DateTime @default(now())
 }

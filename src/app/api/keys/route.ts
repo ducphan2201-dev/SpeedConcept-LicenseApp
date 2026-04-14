@@ -1,27 +1,54 @@
 import { NextResponse } from 'next/server';
-
-declare global {
-  var dbKeys: any[];
-}
-if (!global.dbKeys) {
-  global.dbKeys = [{ key: 'SC-TEST-1234', duration: 1, machineIds: [], activated: false }];
-}
+import prisma from '@/lib/prisma';
 
 export async function GET() {
-    return NextResponse.json(global.dbKeys);
+    try {
+        const keys = await prisma.licenseKey.findMany({
+             orderBy: { createdAt: 'desc' }
+        });
+        
+        // Transform data to match existing frontend shape
+        const formattedKeys = keys.map(k => ({
+             key: k.key,
+             duration: k.duration,
+             machineIds: JSON.parse(k.machineIds),
+             activated: k.isActivated
+        }));
+        
+        return NextResponse.json(formattedKeys);
+    } catch (e) {
+        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
 }
 
 export async function POST(req: Request) {
-    const { duration } = await req.json();
-    const r = Math.random().toString(36).substring(2,6).toUpperCase();
-    const n = Math.random().toString().substring(2,6);
-    const key = `SC-${r}-${n}`;
-    global.dbKeys.push({ key, duration, machineIds: [], activated: false });
-    return NextResponse.json({ success: true, key });
+    try {
+        const { duration } = await req.json();
+        const r = Math.random().toString(36).substring(2,6).toUpperCase();
+        const n = Math.random().toString().substring(2,6);
+        const keyStr = `SC-${r}-${n}`;
+        
+        await prisma.licenseKey.create({
+            data: {
+                key: keyStr,
+                duration: duration
+            }
+        });
+        
+        return NextResponse.json({ success: true, key: keyStr });
+    } catch (e) {
+        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
 }
 
 export async function DELETE(req: Request) {
-    const { key } = await req.json();
-    global.dbKeys = global.dbKeys.filter(k => k.key !== key);
-    return NextResponse.json({ success: true });
+    try {
+        const { key } = await req.json();
+        await prisma.licenseKey.delete({
+            where: { key: key }
+        });
+        return NextResponse.json({ success: true });
+    } catch (e) {
+        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    }
 }

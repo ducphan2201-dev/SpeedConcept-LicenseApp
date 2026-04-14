@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-
-declare global {
-  var dbKeys: any[];
-}
-if (!global.dbKeys) {
-  global.dbKeys = [{ key: 'SC-TEST-1234', duration: 1, machineIds: [], activated: false }];
-}
+import prisma from '@/lib/prisma';
 
 export async function POST(req: Request) {
     try {
@@ -15,22 +9,23 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing key or machineId' }, { status: 400 });
         }
 
-        let license = global.dbKeys.find(l => l.key === key);
+        let license = await prisma.licenseKey.findUnique({ where: { key } });
 
         if (!license) {
             return NextResponse.json({ error: 'Invalid license key' }, { status: 404 });
         }
         
-        // Remove from memory array
-        if (Array.isArray(license.machineIds)) {
-            license.machineIds = license.machineIds.filter((id: string) => id !== machineId);
-        } else {
-             // In case it was stored as string during manual testing earlier
-             try {
-                let ms = JSON.parse(license.machineIds);
-                license.machineIds = ms.filter((id: string) => id !== machineId);
-             } catch {}
-        }
+        let mIds: string[] = [];
+        try {
+            mIds = JSON.parse(license.machineIds);
+        } catch {}
+        
+        mIds = mIds.filter(id => id !== machineId);
+        
+        await prisma.licenseKey.update({
+             where: { key },
+             data: { machineIds: JSON.stringify(mIds) }
+        });
         
         return NextResponse.json({ success: true });
 
