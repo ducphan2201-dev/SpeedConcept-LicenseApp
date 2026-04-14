@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model LicenseKey {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  duration    Int      // Số tháng (0 = vĩnh viễn)
+  createdAt   DateTime @default(now())
+  
+  // Trạng thái kích hoạt
+  isActivated Boolean  @default(false)
+  activatedAt DateTime?
+  expiresAt   DateTime?
+  
+  // Hỗ trợ tối đa 2 máy tính (Lưu JSON string mảng 2 cấu hình HWID)
+  machineIds  String   @default("[]") 
+}
