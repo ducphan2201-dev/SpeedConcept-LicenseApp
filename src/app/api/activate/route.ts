@@ -48,15 +48,22 @@ export async function POST(req: Request) {
             });
         }
 
-        const SECRET = process.env.JWT_SECRET || "SpeedConceptSecretKey_2026_!@#";
+        const privateKey = normalizePrivateKey(process.env.JWT_PRIVATE_KEY_PEM || process.env.JWT_PRIVATE_KEY);
+        if (!privateKey) {
+            return NextResponse.json({ error: 'JWT private key not configured' }, { status: 500 });
+        }
+
         const token = jwt.sign(
             { 
                 key: key, 
                 machineId: machineId,
                 expDate: license.duration === 0 ? "lifetime" : license.expiresAt?.toISOString()
             }, 
-            SECRET, 
-            { expiresIn: license.duration === 0 ? '10y' : `${license.duration * 30}d` }
+            privateKey, 
+            {
+                algorithm: 'RS256',
+                expiresIn: license.duration === 0 ? '10y' : `${license.duration * 30}d`
+            }
         );
 
         return NextResponse.json({ 
@@ -68,4 +75,9 @@ export async function POST(req: Request) {
     } catch (e) {
         return NextResponse.json({ error: 'Server validation error' }, { status: 500 });
     }
+}
+
+function normalizePrivateKey(value: string | undefined) {
+    if (!value) return null;
+    return value.includes('-----BEGIN') ? value : value.replace(/\\n/g, '\n');
 }

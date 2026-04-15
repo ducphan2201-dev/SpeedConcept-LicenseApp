@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma generate && next build",
+    "build": "npm exec -- prisma generate && next build",
+    "db:generate": "npm exec -- prisma generate",
+    "db:migrate": "npm exec -- prisma migrate deploy",
+    "db:migrate:dev": "npm exec -- prisma migrate dev",
     "start": "next start",
     "lint": "eslint"
   },

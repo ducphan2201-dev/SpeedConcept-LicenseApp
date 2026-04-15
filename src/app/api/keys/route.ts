@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { assertAdminAuth, unauthorizedResponse } from '@/lib/adminAuth';
+import { randomBytes } from 'crypto';
 
-export async function GET() {
+export async function GET(req: Request) {
+    if (!assertAdminAuth(req)) {
+        return unauthorizedResponse();
+    }
+
     try {
         const keys = await prisma.licenseKey.findMany({
              orderBy: { createdAt: 'desc' }
@@ -22,11 +28,14 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    if (!assertAdminAuth(req)) {
+        return unauthorizedResponse();
+    }
+
     try {
         const { duration } = await req.json();
-        const r = Math.random().toString(36).substring(2,6).toUpperCase();
-        const n = Math.random().toString().substring(2,6);
-        const keyStr = `SC-${r}-${n}`;
+        const raw = randomBytes(10).toString('hex').toUpperCase();
+        const keyStr = `SC-${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(16, 20)}`;
         
         await prisma.licenseKey.create({
             data: {
@@ -42,6 +51,10 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+    if (!assertAdminAuth(req)) {
+        return unauthorizedResponse();
+    }
+
     try {
         const { key } = await req.json();
         await prisma.licenseKey.delete({
