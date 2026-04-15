@@ -24,3 +24,4 @@ Nếu chạy local:
 .\scripts\bootstrap-neon.ps1 -InstallDependencies
 ```
 
+PhiÃªn báº£n theo [RULE.md](../RULE.md): `1.0` lÃ  báº£n Ä‘áº§u, cáº­p nháº­t nhá» tÄƒng `1.1`, `1.2`, `1.3`, `1.4`, ... vÃ  tÃ­nh nÄƒng lá»›n tÄƒng `2.0`, `3.0`, ...

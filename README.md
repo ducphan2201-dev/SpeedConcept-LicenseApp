@@ -39,6 +39,14 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 This project uses Neon as the PostgreSQL backend for licensing data.
 
+## Versioning Rule
+
+Release numbering follows the root [RULE.md](../RULE.md):
+
+- `1.0` is the first release.
+- Small updates use `1.1`, `1.2`, `1.3`, `1.4`, ...
+- New major features use `2.0`, `3.0`, ...
+
 ### Required environment variables
 
 - `DATABASE_URL`
