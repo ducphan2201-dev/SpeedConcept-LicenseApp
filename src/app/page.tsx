@@ -13,7 +13,8 @@ export default function Dashboard() {
     const checkSession = async () => {
         try {
             const res = await fetch('/api/auth/me');
-            setIsAuthed(res.ok);
+            const data = await res.json();
+            setIsAuthed(data?.authenticated === true);
         } catch {
             setIsAuthed(false);
         }
