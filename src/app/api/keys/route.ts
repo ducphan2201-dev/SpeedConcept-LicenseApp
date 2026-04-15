@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { assertAdminAuth, unauthorizedResponse } from '@/lib/adminAuth';
+import { ensureLicenseSchema } from '@/lib/ensureLicenseSchema';
 import { randomBytes } from 'crypto';
 
 export async function GET(req: Request) {
@@ -9,6 +10,7 @@ export async function GET(req: Request) {
     }
 
     try {
+        await ensureLicenseSchema();
         const keys = await prisma.licenseKey.findMany({
              orderBy: { createdAt: 'desc' }
         });
@@ -33,6 +35,7 @@ export async function POST(req: Request) {
     }
 
     try {
+        await ensureLicenseSchema();
         const { duration } = await req.json();
         const raw = randomBytes(10).toString('hex').toUpperCase();
         const keyStr = `SC-${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(16, 20)}`;
@@ -56,6 +59,7 @@ export async function DELETE(req: Request) {
     }
 
     try {
+        await ensureLicenseSchema();
         const { key } = await req.json();
         await prisma.licenseKey.delete({
             where: { key: key }

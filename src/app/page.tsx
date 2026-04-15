@@ -6,28 +6,40 @@ export default function Dashboard() {
     const [keys, setKeys] = useState<any[]>([]);
 
     const fetchKeys = async () => {
-        const res = await fetch('/api/keys');
-        const data = await res.json();
-        setKeys(data);
+        try {
+            const res = await fetch('/api/keys');
+            const data = await res.json();
+            setKeys(Array.isArray(data) ? data : []);
+        } catch {
+            setKeys([]);
+        }
     };
 
     const genKey = async (duration: number) => {
-        await fetch('/api/keys', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ duration })
-        });
-        fetchKeys();
+        try {
+            await fetch('/api/keys', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ duration })
+            });
+            fetchKeys();
+        } catch {
+            setKeys([]);
+        }
     };
 
     const deleteKey = async (key: string) => {
         if (!confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN Key: ${key}? Lệnh trên AutoCAD đang xài Key này sẽ bị mất quyền PRO ngay lập tức!`)) return;
-        await fetch('/api/keys', {
-            method: 'DELETE',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ key })
-        });
-        fetchKeys();
+        try {
+            await fetch('/api/keys', {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ key })
+            });
+            fetchKeys();
+        } catch {
+            setKeys([]);
+        }
     };
 
     useEffect(() => {
