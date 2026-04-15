@@ -8,6 +8,7 @@ export default function Dashboard() {
     const [loginPass, setLoginPass] = useState('');
     const [loginError, setLoginError] = useState('');
     const [loginBusy, setLoginBusy] = useState(false);
+    const [actionBusy, setActionBusy] = useState(false);
     const [keys, setKeys] = useState<any[]>([]);
 
     const checkSession = async () => {
@@ -32,15 +33,31 @@ export default function Dashboard() {
 
     const genKey = async (duration: number) => {
         try {
-            await fetch('/api/keys', {
+            setActionBusy(true);
+            const res = await fetch('/api/keys', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ duration }),
                 credentials: 'include'
             });
-            fetchKeys();
+            const data = await res.json().catch(() => null);
+            if (res.ok && data?.key) {
+                setKeys((prev) => [
+                    {
+                        key: data.key,
+                        duration,
+                        machineIds: [],
+                        activated: false
+                    },
+                    ...prev
+                ]);
+            } else {
+                fetchKeys();
+            }
         } catch {
             setKeys([]);
+        } finally {
+            setActionBusy(false);
         }
     };
 
@@ -166,10 +183,10 @@ export default function Dashboard() {
                 <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 mb-8">
                     <h2 className="text-xl font-semibold mb-6 text-slate-200">💎 Tạo Mã Kích Hoạt Mới</h2>
                     <div className="flex space-x-4">
-                        <button onClick={() => genKey(1)} className="px-6 py-3 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600 transition hover:text-white rounded-lg font-bold shadow-lg">1 Tháng</button>
-                        <button onClick={() => genKey(3)} className="px-6 py-3 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600 transition hover:text-white rounded-lg font-bold shadow-lg">3 Tháng</button>
-                        <button onClick={() => genKey(6)} className="px-6 py-3 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600 transition hover:text-white rounded-lg font-bold shadow-lg">6 Tháng</button>
-                        <button onClick={() => genKey(0)} className="px-6 py-3 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 transition hover:text-white rounded-lg font-bold shadow-lg">👑 Vĩnh Viễn</button>
+                        <button onClick={() => genKey(1)} disabled={actionBusy} className="px-6 py-3 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600 transition hover:text-white rounded-lg font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-60">1 Tháng</button>
+                        <button onClick={() => genKey(3)} disabled={actionBusy} className="px-6 py-3 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600 transition hover:text-white rounded-lg font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-60">3 Tháng</button>
+                        <button onClick={() => genKey(6)} disabled={actionBusy} className="px-6 py-3 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600 transition hover:text-white rounded-lg font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-60">6 Tháng</button>
+                        <button onClick={() => genKey(0)} disabled={actionBusy} className="px-6 py-3 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 transition hover:text-white rounded-lg font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-60">👑 Vĩnh Viễn</button>
                     </div>
                 </div>
 
