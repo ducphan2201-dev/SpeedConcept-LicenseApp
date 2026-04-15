@@ -52,3 +52,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Server validation error' }, { status: 500 });
     }
 }
+
+function extractBearerToken(headerValue: string | null) {
+    if (!headerValue || !headerValue.startsWith('Bearer ')) return null;
+    return headerValue.slice(7).trim();
+}
