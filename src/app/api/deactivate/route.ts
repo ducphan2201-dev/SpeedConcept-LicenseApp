@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import prisma from '@/lib/prisma';
+import { parseMachineIds, serializeMachineIds } from '@/lib/licenseKey';
+import { normalizePem } from '@/lib/keyMaterial';
+import { ApiValidationError, readJsonBody, readLicenseKeyField, readStringField } from '@/lib/apiValidation';
 
 export async function POST(req: Request) {
     try {
-        const { key, machineId } = await req.json();
+        const body = await readJsonBody(req);
+        const key = readLicenseKeyField(body);
+        const machineId = readStringField(body, 'machineId', { minLength: 1, maxLength: 512 });
         const authToken = extractBearerToken(req.headers.get('authorization'));
-        
-        if (!key || !machineId || !authToken) {
-            return NextResponse.json({ error: 'Missing key or machineId' }, { status: 400 });
+
+        if (!authToken) {
+            return NextResponse.json({ error: 'Missing authorization token' }, { status: 400 });
         }
 
         let license = await prisma.licenseKey.findUnique({ where: { key } });
@@ -17,7 +22,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid license key' }, { status: 404 });
         }
 
-        const publicKey = normalizePublicKey(process.env.JWT_PUBLIC_KEY_PEM);
+        const publicKey = normalizePem(process.env.JWT_PUBLIC_KEY_PEM);
         if (!publicKey) {
             return NextResponse.json({ error: 'JWT public key not configured' }, { status: 500 });
         }
@@ -31,31 +36,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid token' }, { status: 403 });
         }
         
-        let mIds: string[] = [];
-        try {
-            mIds = JSON.parse(license.machineIds);
-        } catch {}
-        
-        mIds = mIds.filter(id => id !== machineId);
+        const mIds = parseMachineIds(license.machineIds).filter((id) => id !== machineId);
         
         await prisma.licenseKey.update({
              where: { key },
-             data: { machineIds: JSON.stringify(mIds) }
+             data: { machineIds: serializeMachineIds(mIds) }
         });
         
         return NextResponse.json({ success: true });
 
-    } catch (e) {
+    } catch (error) {
+        if (error instanceof ApiValidationError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         return NextResponse.json({ error: 'Server validation error' }, { status: 500 });
     }
-}
-
-function extractBearerToken(headerValue: string | null) {
-    if (!headerValue || !headerValue.startsWith('Bearer ')) return null;
-    return headerValue.slice(7).trim();
-}
-
-function normalizePublicKey(value: string | undefined) {
-    if (!value) return null;
-    return value.includes('-----BEGIN') ? value : value.replace(/\\n/g, '\n');
 }

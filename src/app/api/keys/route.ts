@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { assertAdminAuth, unauthorizedResponse } from '@/lib/adminAuth';
 import { ensureLicenseSchema } from '@/lib/ensureLicenseSchema';
-import { randomBytes } from 'crypto';
+import { generateLicenseKey, mapLicenseKeyRow } from '@/lib/licenseKey';
+import { ApiValidationError, readDurationField, readJsonBody, readLicenseKeyField } from '@/lib/apiValidation';
 
 export async function GET(req: Request) {
     if (!assertAdminAuth(req)) {
@@ -15,15 +16,7 @@ export async function GET(req: Request) {
              orderBy: { createdAt: 'desc' }
         });
         
-        // Transform data to match existing frontend shape
-        const formattedKeys = keys.map(k => ({
-             key: k.key,
-             duration: k.duration,
-             machineIds: JSON.parse(k.machineIds),
-             activated: k.isActivated
-        }));
-        
-        return NextResponse.json(formattedKeys);
+        return NextResponse.json(keys.map(mapLicenseKeyRow));
     } catch (e) {
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
@@ -36,19 +29,22 @@ export async function POST(req: Request) {
 
     try {
         await ensureLicenseSchema();
-        const { duration } = await req.json();
-        const raw = randomBytes(10).toString('hex').toUpperCase();
-        const keyStr = `SC-${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(16, 20)}`;
+        const body = await readJsonBody(req);
+        const duration = readDurationField(body);
+        const keyStr = generateLicenseKey();
         
         await prisma.licenseKey.create({
             data: {
                 key: keyStr,
-                duration: duration
+                duration
             }
         });
         
         return NextResponse.json({ success: true, key: keyStr });
-    } catch (e) {
+    } catch (error) {
+        if (error instanceof ApiValidationError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 }
@@ -60,12 +56,16 @@ export async function DELETE(req: Request) {
 
     try {
         await ensureLicenseSchema();
-        const { key } = await req.json();
+        const body = await readJsonBody(req);
+        const key = readLicenseKeyField(body);
         await prisma.licenseKey.delete({
-            where: { key: key }
+            where: { key }
         });
         return NextResponse.json({ success: true });
-    } catch (e) {
+    } catch (error) {
+        if (error instanceof ApiValidationError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 }

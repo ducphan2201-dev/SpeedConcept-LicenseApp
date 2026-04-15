@@ -1,15 +1,39 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { DashboardSearch } from '@/components/licensing/DashboardSearch';
+import { DashboardStats } from '@/components/licensing/DashboardStats';
+import { useLicensingDashboard } from '@/hooks/useLicensingDashboard';
 
 export default function Dashboard() {
+    const {
+        actionBusy,
+        genKey,
+        globalError,
+        handleLogin,
+        handleLogout,
+        isAuthed,
+        isBooting,
+        loginBusy,
+        loginError,
+        loginPass,
+        loginUser,
+        requestDeleteKey,
+        searchTerm,
+        setLoginPass,
+        setLoginUser,
+        setSearchTerm,
+        stats,
+        visibleKeys
+    } = useLicensingDashboard();
+    /*
     const [isAuthed, setIsAuthed] = useState(false);
     const [loginUser, setLoginUser] = useState('admin');
     const [loginPass, setLoginPass] = useState('');
     const [loginError, setLoginError] = useState('');
     const [loginBusy, setLoginBusy] = useState(false);
     const [actionBusy, setActionBusy] = useState(false);
-    const [keys, setKeys] = useState<any[]>([]);
+    const [keys, setKeys] = useState<LicenseKeyItem[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const checkSession = async () => {
         try {
@@ -111,6 +135,7 @@ export default function Dashboard() {
         setIsAuthed(false);
         setKeys([]);
         setLoginPass('');
+        setSearchTerm('');
     };
 
     useEffect(() => {
@@ -122,6 +147,36 @@ export default function Dashboard() {
             fetchKeys();
         }
     }, [isAuthed]);
+
+    const stats = useMemo(() => {
+        const total = keys.length;
+        const active = keys.filter((item) => item.activated).length;
+        const full = keys.filter((item) => item.machineIds.length >= 2).length;
+        return { total, active, full };
+    }, [keys]);
+
+    const visibleKeys = useMemo(() => {
+        const normalized = searchTerm.trim().toLowerCase();
+        if (!normalized) return keys;
+
+        return keys.filter((item) => {
+            const haystack = `${item.key} ${item.duration} ${item.machineIds.length} ${item.activated ? 'active' : 'idle'}`.toLowerCase();
+            return haystack.includes(normalized);
+        });
+    }, [keys, searchTerm]);
+
+    */
+
+    if (isBooting) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
+                <div className="rounded-3xl border border-slate-800 bg-slate-900/95 px-8 py-6 shadow-2xl shadow-cyan-950/20">
+                    <div className="text-sm uppercase tracking-[0.35em] text-slate-500">LicensingWeb</div>
+                    <div className="mt-3 text-2xl font-semibold text-cyan-300">Loading dashboard...</div>
+                </div>
+            </div>
+        );
+    }
 
     if (!isAuthed) {
         return (
@@ -180,6 +235,12 @@ export default function Dashboard() {
                     </button>
                 </div>
                 
+                {globalError ? (
+                    <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-4 text-sm text-amber-200">
+                        {globalError}
+                    </div>
+                ) : null}
+
                 <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 mb-8">
                     <h2 className="text-xl font-semibold mb-6 text-slate-200">💎 Tạo Mã Kích Hoạt Mới</h2>
                     <div className="flex space-x-4">
@@ -196,10 +257,27 @@ export default function Dashboard() {
                         <span className="text-slate-500 text-sm font-normal">Hỗ trợ 2 HWID / Key</span>
                     </h2>
                     <div className="space-y-4">
-                        {[...keys].reverse().map((item, idx) => {
+                        <DashboardStats
+                            total={stats.total}
+                            active={stats.active}
+                            full={stats.full}
+                            visible={visibleKeys.length}
+                        />
+                        <DashboardSearch
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            total={stats.total}
+                            visible={visibleKeys.length}
+                        />
+                        {visibleKeys.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/50 px-6 py-10 text-center text-slate-400">
+                                No keys match the current filter.
+                            </div>
+                        ) : null}
+                        {visibleKeys.map((item) => {
                             const isFull = item.machineIds.length >= 2;
                             return (
-                                <div key={idx} className="p-4 bg-slate-700/50 rounded-xl flex items-center justify-between border border-slate-600/50 hover:border-red-500/30 transition group">
+                                <div key={item.key} className="p-4 bg-slate-700/50 rounded-xl flex items-center justify-between border border-slate-600/50 hover:border-red-500/30 transition group">
                                     <div className="flex items-center space-x-6">
                                         <strong className="text-yellow-400 font-mono text-2xl tracking-widest">{item.key}</strong>
                                         <span className="px-3 py-1 bg-slate-900 rounded-full text-sm text-slate-300 ring-1 ring-slate-600">
@@ -214,7 +292,10 @@ export default function Dashboard() {
                                             </span>
                                         </div>
                                         <button 
-                                            onClick={() => deleteKey(item.key)} 
+                                            onClick={() => {
+                                                if (!confirm(`Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n XÃ“A VÄ¨NH VIá»„N Key: ${item.key}? Lá»‡nh trÃªn AutoCAD Ä‘ang xÃ i Key nÃ y sáº½ bá»‹ máº¥t quyá»n PRO ngay láº­p tá»©c!`)) return;
+                                                requestDeleteKey(item.key);
+                                            }}
                                             className="ml-4 opacity-30 group-hover:opacity-100 px-3 py-1 bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600 transition hover:text-white rounded font-bold shadow-lg text-sm"
                                             title="Hủy/Xóa Key này vĩnh viễn"
                                         >

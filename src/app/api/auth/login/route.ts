@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminSessionToken, getAdminCookieName, getAdminLoginCreds } from '@/lib/adminSession';
+import { ApiValidationError, readJsonBody, readStringField } from '@/lib/apiValidation';
 
 export async function POST(req: Request) {
     try {
@@ -8,7 +9,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Admin auth not configured' }, { status: 503 });
         }
 
-        const { user, pass } = await req.json();
+        const body = await readJsonBody(req);
+        const user = readStringField(body, 'user', { minLength: 1, maxLength: 128 });
+        const pass = readStringField(body, 'pass', { minLength: 1, maxLength: 256, trim: false });
         if (user !== creds.user || pass !== creds.pass) {
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
         }
@@ -23,7 +26,10 @@ export async function POST(req: Request) {
             maxAge: 60 * 60 * 12
         });
         return res;
-    } catch {
+    } catch (error) {
+        if (error instanceof ApiValidationError) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+        }
         return NextResponse.json({ error: 'Login failed' }, { status: 500 });
     }
 }

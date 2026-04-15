@@ -1,13 +1,14 @@
 import jwt from 'jsonwebtoken';
+import { normalizePem } from '@/lib/keyMaterial';
 
 const COOKIE_NAME = 'sc_admin_session';
 
 function getPrivateKey() {
-    return process.env.JWT_PRIVATE_KEY_PEM || process.env.JWT_PRIVATE_KEY || null;
+    return normalizePem(process.env.JWT_PRIVATE_KEY_PEM || process.env.JWT_PRIVATE_KEY);
 }
 
 function getPublicKey() {
-    return process.env.JWT_PUBLIC_KEY_PEM || null;
+    return normalizePem(process.env.JWT_PUBLIC_KEY_PEM);
 }
 
 function getBasicCreds() {
