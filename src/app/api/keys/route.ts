@@ -18,6 +18,7 @@ export async function GET(req: Request) {
         
         return NextResponse.json(keys.map(mapLicenseKeyRow));
     } catch (e) {
+        console.error("GET /api/keys ERROR:", e);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 }
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
         if (error instanceof ApiValidationError) {
             return NextResponse.json({ error: error.message }, { status: error.status });
         }
+        console.error("POST /api/keys ERROR:", error);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 }
